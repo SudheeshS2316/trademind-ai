@@ -54,9 +54,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Market Overview Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {marketLoading ? (
           <>
+            <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
@@ -81,6 +82,14 @@ export default function DashboardPage() {
                   changePercent={`${overview.bankNifty.isPositive ? '+' : ''}${overview.bankNifty.changePercent}%`}
                   isPositive={overview.bankNifty.isPositive}
                   sparklineData={[200, 198, 199, 196, 197, 195, 194, 196, 193, 192]}
+                />
+                <MarketOverviewCard
+                  name={overview.sensex.name}
+                  value={overview.sensex.value.toLocaleString('en-IN')}
+                  change={overview.sensex.change.toFixed(2)}
+                  changePercent={`${overview.sensex.isPositive ? '+' : ''}${overview.sensex.changePercent}%`}
+                  isPositive={overview.sensex.isPositive}
+                  sparklineData={[300, 298, 301, 305, 303, 302, 304, 306, 308, 310]}
                 />
               </>
             )}

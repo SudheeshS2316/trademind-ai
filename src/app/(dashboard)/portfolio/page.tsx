@@ -11,6 +11,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { cn, formatCurrency, formatPercent } from '@/lib/utils';
 import { Briefcase, TrendingUp, Plus, DollarSign, PieChart } from 'lucide-react';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface PaperTrade { id: string; stockSymbol: string; entryPrice: number; exitPrice: number | null; quantity: number; direction: string; pnl: number | null; status: string; }
 interface Portfolio { capital: number; riskProfile: string; }
@@ -26,6 +27,8 @@ export default function PortfolioPage() {
   const [error, setError] = useState<string | null>(null);
   const [newTrade, setNewTrade] = useState({ symbol: '', entryPrice: '', quantity: '', direction: 'LONG' });
 
+  const { priceTicks, socket } = useWebSocket();
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -35,17 +38,36 @@ export default function PortfolioPage() {
       ]);
       setPortfolio(p);
       setTrades(t);
+      if (socket) {
+        const openSymbols = t.filter(x => x.status !== 'CLOSED').map(x => x.stockSymbol);
+        if (openSymbols.length > 0) {
+          socket.emit('subscribe:prices', Array.from(new Set(openSymbols)));
+        }
+      }
       setError(null);
     } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load portfolio'); }
     finally { setLoading(false); }
-  }, []);
+  }, [socket]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = trades.filter(t => activeTab === 'open' ? t.status !== 'CLOSED' : t.status === 'CLOSED');
-  const openTrades = trades.filter(t => t.status !== 'CLOSED');
-  const totalPnl = openTrades.reduce((s, t) => s + (t.pnl || 0), 0);
-  const totalInvested = openTrades.reduce((s, t) => s + t.entryPrice * t.quantity, 0);
+  // Merge live prices into open trades
+  const liveOpenTrades = trades.filter(t => t.status !== 'CLOSED').map(t => {
+    const tick = priceTicks.find(tick => tick.symbol === t.stockSymbol);
+    if (tick) {
+      const currentPrice = tick.price;
+      const pnl = t.direction === 'LONG' 
+        ? (currentPrice - t.entryPrice) * t.quantity 
+        : (t.entryPrice - currentPrice) * t.quantity;
+      return { ...t, currentPrice, pnl };
+    }
+    return { ...t, currentPrice: t.entryPrice };
+  });
+
+  const filtered = activeTab === 'open' ? liveOpenTrades : trades.filter(t => t.status === 'CLOSED');
+  
+  const totalPnl = liveOpenTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+  const totalInvested = liveOpenTrades.reduce((s, t) => s + t.entryPrice * t.quantity, 0);
   const closedWins = trades.filter(t => t.status === 'CLOSED' && (t.pnl || 0) > 0).length;
   const closedTotal = trades.filter(t => t.status === 'CLOSED').length;
   const winRate = closedTotal > 0 ? Math.round(closedWins / closedTotal * 100) : 0;
@@ -53,7 +75,7 @@ export default function PortfolioPage() {
   const handleNewTrade = async () => {
     if (!newTrade.symbol || !newTrade.entryPrice || !newTrade.quantity) return;
     try {
-      await api.post('/api/paper-trades', { symbol: newTrade.symbol, entryPrice: newTrade.entryPrice, quantity: newTrade.quantity, direction: newTrade.direction });
+      await api.post('/api/paper-trades', { symbol: newTrade.symbol, entryPrice: Number(newTrade.entryPrice), quantity: Number(newTrade.quantity), direction: newTrade.direction });
       setNewTrade({ symbol: '', entryPrice: '', quantity: '', direction: 'LONG' });
       setShowTrade(false);
       fetchData();
@@ -118,7 +140,7 @@ export default function PortfolioPage() {
                   <td className="px-4 py-3 text-right font-mono text-text-secondary">{t.quantity}</td>
                   <td className={cn('px-4 py-3 text-right font-mono font-semibold', (t.pnl || 0) >= 0 ? 'text-bullish' : 'text-bearish')}>{t.pnl != null ? formatCurrency(t.pnl) : '—'}</td>
                   <td className="px-4 py-3 text-center"><Badge variant={t.direction === 'LONG' ? 'bullish' : 'bearish'}>{t.direction}</Badge></td>
-                  {activeTab === 'open' && <td className="px-4 py-3 text-right"><Button variant="outline" size="sm" onClick={() => closeTrade(t.id, t.entryPrice * 1.02)}>Close</Button></td>}
+                  {activeTab === 'open' && <td className="px-4 py-3 text-right"><Button variant="outline" size="sm" onClick={() => closeTrade(t.id, (t as any).currentPrice || t.entryPrice)}>Close</Button></td>}
                 </tr>
               ))}
             </tbody>

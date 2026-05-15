@@ -14,6 +14,7 @@ interface MarketIndex {
 interface MarketOverview {
   nifty: MarketIndex;
   bankNifty: MarketIndex;
+  sensex: MarketIndex;
   marketSentiment: string;
   marketStatus: string;
 }

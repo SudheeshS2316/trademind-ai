@@ -11,6 +11,8 @@ import { useSignals } from '@/hooks/useSignals';
 import { Zap, Brain, TrendingUp, TrendingDown, Target, ShieldAlert, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Signal } from '@/types';
+import { TradingViewChart } from '@/components/dashboard/TradingViewChart';
+import { api } from '@/lib/api';
 
 const tabs = [
   { id: 'all', label: 'All Signals' },
@@ -22,8 +24,26 @@ const tabs = [
 export default function SignalsPage() {
   const { signals, loading, refreshSignals } = useSignals();
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [selectedSignal, setSelectedSignal] = React.useState<Signal | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [chartData, setChartData] = React.useState<any[]>([]);
+  const [chartLoading, setChartLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedSignal) {
+      setChartLoading(true);
+      const date = new Date();
+      date.setMonth(date.getMonth() - 6);
+      const period1 = date.toISOString().split('T')[0];
+      
+      api.get<any[]>(`/api/market/history?symbol=${selectedSignal.stockSymbol}&period1=${period1}&interval=1d`)
+        .then(data => setChartData(data))
+        .catch(err => console.error('Failed to load chart data', err))
+        .finally(() => setChartLoading(false));
+    } else {
+      setChartData([]);
+    }
+  }, [selectedSignal]);
 
   const filteredSignals = signals.filter((s) => {
     if (activeTab === 'bullish') return s.direction === 'BULLISH' && s.status === 'ACTIVE';
@@ -113,6 +133,15 @@ export default function SignalsPage() {
               <Badge variant={selectedSignal.direction === 'BULLISH' ? 'bullish' : 'bearish'} dot>{selectedSignal.direction}</Badge>
               <span className="text-sm text-text-muted">Confidence: <strong className="text-text-primary">{selectedSignal.confidenceScore}%</strong></span>
               <span className="text-sm text-text-muted">R:R <strong className="text-text-primary">{selectedSignal.riskReward?.toFixed(1) || '—'}</strong></span>
+            </div>
+            <div className="rounded-xl border border-terminal-600 bg-terminal-900 p-4">
+              {chartLoading ? (
+                <div className="h-[200px] flex items-center justify-center text-text-muted">Loading chart data...</div>
+              ) : chartData.length > 0 ? (
+                <TradingViewChart data={chartData} height={200} />
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-text-muted">No chart data available</div>
+              )}
             </div>
             <div className="rounded-xl border border-terminal-600 bg-terminal-900 p-4">
               <div className="flex items-center gap-2 mb-2">

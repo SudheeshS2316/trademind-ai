@@ -4,6 +4,7 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Bell, Search, LogOut, User, ChevronDown, Menu } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useMarketData } from '@/hooks/useMarketData';
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 export function Navbar({ onMenuToggle }: NavbarProps) {
   const { user, logout } = useAuth();
+  const { overview } = useMarketData();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -36,16 +38,24 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
         </button>
 
         {/* Market Ticker */}
-        <div className="hidden items-center gap-4 text-xs font-mono md:flex">
-          <MarketTick label="NIFTY 50" value="22,450.30" change="+0.85%" positive />
-          <div className="h-4 w-px bg-terminal-600" />
-          <MarketTick label="BANK NIFTY" value="48,720.15" change="-0.32%" positive={false} />
-          <div className="h-4 w-px bg-terminal-600" />
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-bullish animate-pulse" />
-            <span className="text-text-muted">Market Open</span>
-          </span>
-        </div>
+        {overview ? (
+          <div className="hidden items-center gap-4 text-xs font-mono md:flex">
+            <MarketTick label="NIFTY 50" value={overview.nifty.value.toLocaleString('en-IN')} change={`${overview.nifty.isPositive ? '+' : ''}${overview.nifty.changePercent.toFixed(2)}%`} positive={overview.nifty.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <MarketTick label="BANK NIFTY" value={overview.bankNifty.value.toLocaleString('en-IN')} change={`${overview.bankNifty.isPositive ? '+' : ''}${overview.bankNifty.changePercent.toFixed(2)}%`} positive={overview.bankNifty.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <MarketTick label="SENSEX" value={overview.sensex.value.toLocaleString('en-IN')} change={`${overview.sensex.isPositive ? '+' : ''}${overview.sensex.changePercent.toFixed(2)}%`} positive={overview.sensex.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <span className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${overview.marketStatus === 'open' ? 'bg-bullish animate-pulse' : 'bg-bearish'}`} />
+              <span className="text-text-muted">Market {overview.marketStatus === 'open' ? 'Open' : 'Closed'}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="hidden items-center gap-4 text-xs font-mono md:flex animate-pulse text-text-muted">
+            Fetching live data...
+          </div>
+        )}
       </div>
 
       {/* Right: Search + Notifications + User */}

@@ -11,38 +11,39 @@ import { Eye, Trash2, Bell, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface WatchlistItem { id: string; stockSymbol: string; createdAt: string; }
 
-// Simulated price data for watched stocks (in production, this comes from market API)
-const STOCK_PRICES: Record<string, { price: number; change: number; changePercent: number; volume: string; aiConfidence: number }> = {
-  RELIANCE: { price: 2850.45, change: 32.10, changePercent: 1.14, volume: '12.5M', aiConfidence: 85 },
-  TCS: { price: 3912.30, change: 45.60, changePercent: 1.18, volume: '4.2M', aiConfidence: 78 },
-  INFY: { price: 1456.80, change: -12.40, changePercent: -0.84, volume: '8.1M', aiConfidence: 82 },
-  HDFCBANK: { price: 1682.15, change: 18.90, changePercent: 1.14, volume: '6.3M', aiConfidence: 76 },
-  SBIN: { price: 823.50, change: -5.20, changePercent: -0.63, volume: '15.8M', aiConfidence: 80 },
-  ICICIBANK: { price: 1245.60, change: 22.10, changePercent: 1.80, volume: '7.4M', aiConfidence: 74 },
-  ITC: { price: 452.30, change: -3.80, changePercent: -0.83, volume: '18.2M', aiConfidence: 71 },
-  BHARTIARTL: { price: 1523.70, change: 8.30, changePercent: 0.55, volume: '3.7M', aiConfidence: 68 },
-};
-const getPrice = (sym: string) => STOCK_PRICES[sym] || { price: 1000, change: 5, changePercent: 0.5, volume: '1M', aiConfidence: 65 };
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 export default function WatchlistPage() {
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { priceTicks, socket } = useWebSocket();
 
   const fetchWatchlist = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.get<WatchlistItem[]>('/api/watchlist');
       setItems(data);
+      if (socket) {
+        socket.emit('subscribe:prices', data.map(i => i.stockSymbol));
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load watchlist');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [socket]);
 
   useEffect(() => { fetchWatchlist(); }, [fetchWatchlist]);
+
+  const getPrice = (sym: string) => {
+    const tick = priceTicks.find(t => t.symbol === sym);
+    if (tick) {
+      return { price: tick.price, change: tick.change, changePercent: tick.changePercent, volume: (tick.volume / 1000000).toFixed(1) + 'M', aiConfidence: 85 };
+    }
+    return { price: 0, change: 0, changePercent: 0, volume: '0M', aiConfidence: 0 };
+  };
 
   const handleAddStock = async (symbol: string) => {
     if (items.find(i => i.stockSymbol === symbol)) return;
