@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  passwordHash    String
+  riskProfile     String           @default("MODERATE") // LOW, MODERATE, HIGH
+  capitalPerTrade Float            @default(10000)
+  riskPercent     Float            @default(2.0)
+  riskReward      Float            @default(2.0)
+  marketCategory  String           @default("ALL") // LARGE_CAP, MID_CAP, SMALL_CAP, ALL
+  tradingStyle    String           @default("SWING") // SWING, POSITIONAL, INTRADAY
+  createdAt       DateTime         @default(now())
+
+  // Relations
+  watchlists      Watchlist[]
+  alerts          Alert[]
+  paperTrades     PaperTrade[]
+  backtestResults BacktestResult[]
+  portfolio       Portfolio?
+}
+
+model Portfolio {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  capital     Float    @default(100000)
+  riskProfile String   @default("MODERATE")
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Watchlist {
+  id          String   @id @default(uuid())
+  userId      String
+  stockSymbol String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, stockSymbol])
+}
+
+model Signal {
+  id              String   @id @default(uuid())
+  stockSymbol     String
+  entryPrice      Float
+  stopLoss        Float
+  targetPrice     Float
+  confidenceScore Int      // 0-100
+  riskReward      Float    @default(2.0)
+  direction       String   @default("BULLISH") // BULLISH, BEARISH
+  aiReasoning     String?
+  status          String   @default("ACTIVE") // ACTIVE, HIT_TARGET, HIT_SL, EXPIRED
+  createdAt       DateTime @default(now())
+}
+
+model Alert {
+  id           String   @id @default(uuid())
+  userId       String
+  stockSymbol  String
+  alertType    String   // TARGET, STOP_LOSS, VOLUME_BREAKOUT, PRICE_ABOVE, PRICE_BELOW
+  triggerPrice Float
+  isActive     Boolean  @default(true)
+  isTriggered  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model PaperTrade {
+  id          String   @id @default(uuid())
+  userId      String
+  stockSymbol String
+  entryPrice  Float
+  exitPrice   Float?
+  quantity    Int
+  direction   String   @default("LONG") // LONG, SHORT
+  pnl         Float?
+  status      String   @default("OPEN") // OPEN, CLOSED
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model BacktestResult {
+  id           String   @id @default(uuid())
+  userId       String
+  strategyName String
+  winRate      Float
+  sharpeRatio  Float
+  drawdown     Float
+  profitFactor Float    @default(1.0)
+  totalTrades  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+}

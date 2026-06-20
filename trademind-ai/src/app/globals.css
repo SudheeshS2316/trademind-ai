@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* ===== TradeMind AI Design System ===== */
+/* Using @theme (not inline) so CSS custom properties are emitted for use in plain CSS */
+
+@theme {
+  /* Terminal Dark Palette */
+  --color-terminal-950: #060810;
+  --color-terminal-900: #0B0E14;
+  --color-terminal-800: #151924;
+  --color-terminal-700: #1C212D;
+  --color-terminal-600: #2A2F3E;
+  --color-terminal-500: #4A5568;
+
+  /* Trading Colors */
+  --color-bullish: #26A69A;
+  --color-bullish-hover: #31C5B7;
+  --color-bullish-dim: oklch(0.65 0.1 170 / 0.12);
+  --color-bearish: #EF5350;
+  --color-bearish-hover: #FF6B68;
+  --color-bearish-dim: oklch(0.6 0.15 25 / 0.12);
+
+  /* Accent */
+  --color-accent: #6366F1;
+  --color-accent-hover: #818CF8;
+  --color-accent-dim: oklch(0.55 0.15 265 / 0.12);
+
+  /* Warning / Info */
+  --color-warning: #F59E0B;
+  --color-warning-dim: oklch(0.75 0.15 85 / 0.12);
+  --color-info: #3B82F6;
+  --color-info-dim: oklch(0.6 0.15 260 / 0.12);
+
+  /* Text */
+  --color-text-primary: #E2E8F0;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  /* Fonts — use the CSS variables set by next/font in layout.tsx */
+  --font-sans: var(--font-inter, 'Inter', ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-jetbrains, 'JetBrains Mono', ui-monospace, monospace);
+}
+
+/* ===== Base Styles ===== */
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-terminal-900);
+  color: var(--color-text-primary);
+}
+
+/* ===== Custom Scrollbar ===== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-terminal-900);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-terminal-600);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-terminal-500);
+}
+
+/* ===== Animations ===== */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 12px 4px rgba(99, 102, 241, 0.15); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out both;
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out both;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.animate-ticker {
+  animation: ticker 30s linear infinite;
+}
+
+/* ===== Glass Morphism Utility ===== */
+
+.glass {
+  background: rgba(21, 25, 36, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 47, 62, 0.5);
+}
+
+/* ===== Trading Card Hover ===== */
+
+.card-hover {
+  transition: all 0.2s ease;
+}
+.card-hover:hover {
+  background-color: var(--color-terminal-700);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}

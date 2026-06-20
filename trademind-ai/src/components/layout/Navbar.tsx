@@ -1,0 +1,131 @@
+'use client';
+
+import React from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Bell, LogOut, User, ChevronDown, Menu } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useMarketData } from '@/hooks/useMarketData';
+import { useRouter } from 'next/navigation';
+import { StockSearch } from '@/components/dashboard/StockSearch';
+import { api } from '@/lib/api';
+
+interface NavbarProps {
+  onMenuToggle: () => void;
+}
+
+export function Navbar({ onMenuToggle }: NavbarProps) {
+  const { user, logout } = useAuth();
+  const { overview } = useMarketData();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleNavbarSearch = async (symbol: string) => {
+    try {
+      // Add to watchlist, then navigate there
+      await api.post('/api/watchlist', { symbol }).catch(() => {});
+      router.push('/watchlist');
+    } catch (err) {
+      console.error('Failed to add from navbar search:', err);
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-terminal-600 bg-terminal-800/80 backdrop-blur-xl px-4 lg:px-6">
+      {/* Left: Mobile menu + Market Ticker */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onMenuToggle}
+          className="rounded-lg p-2 text-text-muted hover:bg-terminal-700 hover:text-text-primary lg:hidden"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Market Ticker */}
+        {overview ? (
+          <div className="hidden items-center gap-4 text-xs font-mono md:flex">
+            <MarketTick label="NIFTY 50" value={overview.nifty.value.toLocaleString('en-IN')} change={`${overview.nifty.isPositive ? '+' : ''}${overview.nifty.changePercent.toFixed(2)}%`} positive={overview.nifty.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <MarketTick label="BANK NIFTY" value={overview.bankNifty.value.toLocaleString('en-IN')} change={`${overview.bankNifty.isPositive ? '+' : ''}${overview.bankNifty.changePercent.toFixed(2)}%`} positive={overview.bankNifty.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <MarketTick label="SENSEX" value={overview.sensex.value.toLocaleString('en-IN')} change={`${overview.sensex.isPositive ? '+' : ''}${overview.sensex.changePercent.toFixed(2)}%`} positive={overview.sensex.isPositive} />
+            <div className="h-4 w-px bg-terminal-600" />
+            <span className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${overview.marketStatus === 'open' ? 'bg-bullish animate-pulse' : 'bg-bearish'}`} />
+              <span className="text-text-muted">Market {overview.marketStatus === 'open' ? 'Open' : 'Closed'}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="hidden items-center gap-4 text-xs font-mono md:flex animate-pulse text-text-muted">
+            Fetching live data...
+          </div>
+        )}
+      </div>
+
+      {/* Right: Search + Notifications + User */}
+      <div className="flex items-center gap-2">
+        {/* Global Search */}
+        <div className="hidden sm:block w-48 lg:w-56">
+          <StockSearch onSelect={handleNavbarSearch} placeholder="Search stocks..." />
+        </div>
+
+        {/* Notifications */}
+        <button className="relative rounded-lg p-2 text-text-muted transition-colors hover:bg-terminal-700 hover:text-text-primary">
+          <Bell size={18} />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent" />
+        </button>
+
+        {/* User Menu */}
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-terminal-700"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-accent">
+              <User size={14} />
+            </div>
+            <span className="hidden text-text-primary md:inline">{user?.name || 'Trader'}</span>
+            <ChevronDown size={14} className="text-text-muted" />
+          </button>
+
+          {userMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-terminal-600 bg-terminal-800 py-2 shadow-2xl animate-fade-in">
+              <div className="border-b border-terminal-600 px-4 py-2">
+                <p className="text-sm font-medium text-text-primary">{user?.name}</p>
+                <p className="text-xs text-text-muted">{user?.email}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-bearish hover:bg-terminal-700"
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MarketTick({ label, value, change, positive }: { label: string; value: string; change: string; positive: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-text-muted">{label}</span>
+      <span className="text-text-primary font-semibold">{value}</span>
+      <span className={positive ? 'text-bullish' : 'text-bearish'}>{change}</span>
+    </div>
+  );
+}
+
