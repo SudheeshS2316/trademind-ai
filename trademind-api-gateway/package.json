@@ -12,6 +12,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "prisma": {
+    "schema": "../prisma/schema.prisma"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@types/node-cron": "^3.0.11",
