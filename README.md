@@ -2,6 +2,18 @@
 
 > **AI-powered swing trading platform for Indian stock markets (NSE/BSE)**
 
+---
+
+## 🌍 Deployed Project Links (Live)
+
+* **Vercel Frontend:** [https://trademind-ai-pi.vercel.app](https://trademind-ai-pi.vercel.app)
+* **Render Backend API:** [https://trademind-ai-9rck.onrender.com](https://trademind-ai-9rck.onrender.com)
+* **API Health Check (for UptimeRobot):** [https://trademind-ai-9rck.onrender.com/api/health](https://trademind-ai-9rck.onrender.com/api/health)
+* **Database (Neon PostgreSQL Connection String):**
+  `postgresql://neondb_owner:npg_lDHG15KFVohx@ep-calm-moon-azep1k3g.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+
+---
+
 A production-ready, full-stack trading platform that delivers real-time market data, technical analysis-driven signals, portfolio tracking, and price alerts — built with a modern decoupled architecture.
 
 ---

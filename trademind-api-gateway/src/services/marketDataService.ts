@@ -10,12 +10,23 @@ const NIFTY_SYMBOL = '^NSEI';
 const BANK_NIFTY_SYMBOL = '^NSEBANK';
 const SENSEX_SYMBOL = '^BSESN';
 
+// Global fetch options with realistic browser user-agent to prevent Yahoo Finance blocking Render
+const moduleOpts = {
+  fetchOptions: {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    }
+  }
+};
+
 export async function getMarketOverview() {
   try {
     const [nifty, bankNifty, sensex] = await Promise.all([
-      yf.quote(NIFTY_SYMBOL).catch(() => null),
-      yf.quote(BANK_NIFTY_SYMBOL).catch(() => null),
-      yf.quote(SENSEX_SYMBOL).catch(() => null)
+      yf.quote(NIFTY_SYMBOL, {}, moduleOpts).catch(() => null),
+      yf.quote(BANK_NIFTY_SYMBOL, {}, moduleOpts).catch(() => null),
+      yf.quote(SENSEX_SYMBOL, {}, moduleOpts).catch(() => null)
     ]);
 
     if (!nifty && !bankNifty && !sensex) {
@@ -58,7 +69,7 @@ export async function getTrendingStocks() {
   const symbols = LARGE_MID_CAP_UNIVERSE.map(s => `${s.symbol}.NS`);
   
   try {
-    const quotes = await Promise.all(symbols.map(sym => yf.quote(sym).catch(() => null)));
+    const quotes = await Promise.all(symbols.map(sym => yf.quote(sym, {}, moduleOpts).catch(() => null)));
     const filtered = quotes.filter((q: any) => q !== null && q !== undefined && q.symbol);
     
     if (filtered.length === 0) {
@@ -100,7 +111,7 @@ export async function getSectorPerformance() {
   ];
 
   try {
-    const quotes = await Promise.all(sectors.map(s => yf.quote(s.symbol).catch(() => null)));
+    const quotes = await Promise.all(sectors.map(s => yf.quote(s.symbol, {}, moduleOpts).catch(() => null)));
     if (quotes.every(q => q === null)) {
       console.warn('⚠️ Yahoo Finance sectors failed. Falling back to mock sector performance.');
       return mockMarket.getSectorPerformance();
@@ -124,7 +135,7 @@ export async function getHistoricalData(symbol: string, period1: string, interva
   try {
     const formattedSymbol = symbol.includes('.NS') || symbol.startsWith('^') ? symbol : `${symbol}.NS`;
     const queryOptions: any = { period1: period1, interval: interval };
-    const result = await yf.chart(formattedSymbol, queryOptions);
+    const result = await yf.chart(formattedSymbol, queryOptions, moduleOpts);
     
     if (!result || !result.quotes || result.quotes.length === 0) {
       console.warn(`⚠️ Empty historical data for ${symbol}. Falling back to mock historical data.`);
@@ -148,7 +159,7 @@ export async function getHistoricalData(symbol: string, period1: string, interva
 export async function getLiveQuotes(symbols: string[]) {
   try {
     const formattedSymbols = symbols.map(s => s.includes('.NS') || s.startsWith('^') ? s : `${s}.NS`);
-    const quotes = await Promise.all(formattedSymbols.map(sym => yf.quote(sym).catch(() => null)));
+    const quotes = await Promise.all(formattedSymbols.map(sym => yf.quote(sym, {}, moduleOpts).catch(() => null)));
     
     const filtered = quotes.filter(q => q !== null && q !== undefined);
     if (filtered.length === 0) {
