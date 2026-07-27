@@ -206,9 +206,16 @@ export async function searchStocks(query: string) {
   try {
     const q = query.toLowerCase();
     
-    // Read local stock DB
-    const dbPath = path.join(__dirname, '../data/nse_stocks.json');
-    if (!fs.existsSync(dbPath)) return [];
+    // Read local stock DB — fallback to src if dist/ doesn't have the JSON asset (TSC ignores JSONs)
+    let dbPath = path.join(__dirname, '../data/nse_stocks.json');
+    if (!fs.existsSync(dbPath)) {
+      dbPath = path.join(__dirname, '../../src/data/nse_stocks.json');
+    }
+    
+    if (!fs.existsSync(dbPath)) {
+      console.error('❌ Could not locate nse_stocks.json database in dist or src folders.');
+      return [];
+    }
     
     const stocksData = fs.readFileSync(dbPath, 'utf8');
     const stocks = JSON.parse(stocksData);
