@@ -42,6 +42,16 @@ export default function WatchlistPage() {
     if (tick) {
       return { price: tick.price, change: tick.change, changePercent: tick.changePercent, volume: (tick.volume / 1000000).toFixed(1) + 'M' };
     }
+    // Fallback to static values loaded from the REST API
+    const item = items.find(i => i.stockSymbol === sym) as any;
+    if (item && item.price !== undefined) {
+      return {
+        price: item.price || 0,
+        change: item.change || 0,
+        changePercent: item.changePercent || 0,
+        volume: item.volume ? (item.volume / 1000000).toFixed(1) + 'M' : '0M'
+      };
+    }
     return { price: 0, change: 0, changePercent: 0, volume: '0M' };
   };
 
