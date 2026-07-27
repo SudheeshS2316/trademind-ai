@@ -17,6 +17,41 @@ import backtestRoutes from './routes/backtest';
 
 dotenv.config();
 
+// Global fetch override to route Yahoo Finance API requests through Vercel's Serverless Proxy (bypasses Render IP block)
+if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.startsWith('https://')) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const urlString = typeof input === 'string' ? input : (input as any).url || input.toString();
+    
+    if (urlString.includes('finance.yahoo.com')) {
+      const targetUrl = encodeURIComponent(urlString);
+      const proxyUrl = `${process.env.FRONTEND_URL}/api/proxy?url=${targetUrl}`;
+      
+      const headers = new Headers(init?.headers);
+      headers.delete('host');
+      if (process.env.JWT_SECRET) {
+        headers.set('x-proxy-secret', process.env.JWT_SECRET);
+      }
+      
+      try {
+        const response = await originalFetch(proxyUrl, {
+          method: init?.method || 'GET',
+          headers,
+          body: init?.body,
+          signal: init?.signal
+        });
+        return response;
+      } catch (err) {
+        console.error(`🔀 Proxy request failed: ${err}. Falling back to direct fetch.`);
+        return originalFetch(input, init);
+      }
+    }
+    
+    return originalFetch(input, init);
+  };
+  console.log(`📡 Yahoo Finance API proxy enabled through ${process.env.FRONTEND_URL}`);
+}
+
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
