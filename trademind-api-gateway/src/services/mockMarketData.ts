@@ -3,12 +3,15 @@
 export function getMarketOverview() {
   const niftyBase = 22450;
   const bankNiftyBase = 48720;
+  const sensexBase = 73800;
   const niftyChange = Math.round((Math.random() - 0.45) * 400 * 100) / 100;
   const bankNiftyChange = Math.round((Math.random() - 0.5) * 600 * 100) / 100;
+  const sensexChange = Math.round((Math.random() - 0.45) * 1200 * 100) / 100;
 
   return {
     nifty: { name: 'NIFTY 50', value: niftyBase + niftyChange, change: niftyChange, changePercent: Math.round(niftyChange / niftyBase * 10000) / 100, isPositive: niftyChange >= 0 },
     bankNifty: { name: 'BANK NIFTY', value: bankNiftyBase + bankNiftyChange, change: bankNiftyChange, changePercent: Math.round(bankNiftyChange / bankNiftyBase * 10000) / 100, isPositive: bankNiftyChange >= 0 },
+    sensex: { name: 'SENSEX', value: sensexBase + sensexChange, change: sensexChange, changePercent: Math.round(sensexChange / sensexBase * 10000) / 100, isPositive: sensexChange >= 0 },
     marketSentiment: niftyChange >= 0 ? 'Bullish' : 'Bearish',
     marketStatus: 'open',
   };
