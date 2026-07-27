@@ -20,7 +20,7 @@ dotenv.config();
 // Global fetch override to route Yahoo Finance API requests through Vercel's Serverless Proxy (bypasses Render IP block)
 if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.startsWith('https://')) {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = async (input: any, init?: any) => {
     const urlString = typeof input === 'string' ? input : (input as any).url || input.toString();
     
     if (urlString.includes('finance.yahoo.com')) {
