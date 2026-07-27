@@ -12,7 +12,7 @@ A production-ready, full-stack trading platform that delivers real-time market d
 TradeMind_AI/
 ├── trademind-ai/          # Next.js 16 Frontend
 ├── trademind-api-gateway/ # Node.js/Express Backend
-└── prisma/                # Shared Prisma schema & SQLite DB
+└── prisma/                # Shared Prisma schema & PostgreSQL DB
 ```
 
 ---
@@ -22,7 +22,7 @@ TradeMind_AI/
 | Layer    | Technology                                   |
 |----------|----------------------------------------------|
 | Frontend | Next.js 16, React 19, TypeScript, TailwindCSS |
-| Backend  | Node.js, Express 5, TypeScript, Prisma (SQLite) |
+| Backend  | Node.js, Express 5, TypeScript, Prisma (PostgreSQL) |
 | Realtime | Socket.IO (WebSockets)                        |
 | Data     | yahoo-finance2 (live NSE/BSE data)            |
 | Auth     | JWT + bcrypt                                  |
@@ -42,9 +42,64 @@ TradeMind_AI/
 
 ---
 
+## 🌐 Hosting (Free Tier)
+
+| Service | Platform | Cost |
+|---------|----------|------|
+| Frontend | [Vercel](https://vercel.com) | Free |
+| Backend | [Render](https://render.com) | Free |
+| Database | [Neon](https://neon.tech) | Free |
+| Keep-alive | [UptimeRobot](https://uptimerobot.com) | Free |
+
+### Deployment Order
+
+**1. Neon (Database)**
+- Sign up at [neon.tech](https://neon.tech) (no credit card)
+- Create project → copy the **Connection String**
+
+**2. Render (Backend)**
+- Sign up at [render.com](https://render.com) (no credit card)
+- New → Web Service → connect this GitHub repo
+- Root Directory: `trademind-api-gateway`
+- Build: `npm install && npx prisma generate && npm run build`
+- Start: `npx prisma migrate deploy && npm run start`
+- Env vars: `DATABASE_URL` (Neon string), `JWT_SECRET`, `PORT=5000`
+- Copy your Render URL (`https://trademind-api.onrender.com`)
+
+**3. Vercel (Frontend)**
+- Sign up at [vercel.com](https://vercel.com) (no credit card)
+- Import this repo → Root Directory: `trademind-ai`
+- Env vars: `NEXT_PUBLIC_API_URL` + `NEXT_PUBLIC_WS_URL` = your Render URL
+- Deploy → copy your Vercel URL
+
+**4. Finish CORS**
+- Render → your service → Environment → add `FRONTEND_URL` = your Vercel URL → Redeploy
+
+**5. UptimeRobot (Keep-alive)**
+- Sign up at [uptimerobot.com](https://uptimerobot.com) (no credit card)
+- Add monitor → HTTP(s) → `https://your-backend.onrender.com/api/health`
+- Interval: **5 minutes** — keeps the backend alive 24/7
+
+---
+
 ## 🚀 Running Locally
 
-You need **two terminal sessions**. Ensure Node.js is in your PATH.
+You need **two terminal sessions** and a **Neon database** (same DB used for both local and production).
+
+### Step 0 — Set up local env
+
+```powershell
+# trademind-api-gateway/.env — paste your Neon connection string
+DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/trademind?sslmode=require"
+JWT_SECRET="any_long_random_string"
+PORT=5000
+```
+
+```powershell
+# trademind-ai/.env — keep as-is for local dev
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_WS_URL=http://localhost:5000
+```
 
 ### Terminal 1 — Backend API (port 5000)
 
@@ -53,6 +108,7 @@ cd trademind-api-gateway
 $env:PATH = "C:\Program Files\nodejs;$env:PATH"
 npm install
 npx prisma generate
+npx prisma migrate dev   # Creates tables in your Neon DB
 npm run dev
 ```
 
@@ -66,25 +122,6 @@ npm run dev
 ```
 
 Visit **http://localhost:3000** — sign up and start trading!
-
----
-
-## 🔧 Environment Setup
-
-### `trademind-api-gateway/.env`
-
-```env
-DATABASE_URL="file:../prisma/dev.db"
-JWT_SECRET="your_super_secret_jwt_key_change_in_production"
-PORT=5000
-```
-
-### `trademind-ai/.env`
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_WS_URL=http://localhost:5000
-```
 
 ---
 
@@ -113,6 +150,7 @@ NEXT_PUBLIC_WS_URL=http://localhost:5000
 | PATCH  | `/api/paper-trades/:id/close` | Close trade          | ✅   |
 | POST   | `/api/backtest`           | Run backtest              | ✅   |
 | GET    | `/api/backtest/results`   | Backtest history          | ✅   |
+| GET    | `/api/health`             | Health check (used by UptimeRobot) | ❌ |
 
 ---
 
@@ -123,3 +161,4 @@ This is a personal project. Feel free to fork and build upon it!
 ---
 
 *Built with ❤️ for Indian retail traders*
+
