@@ -262,8 +262,7 @@ export function analyzeStock(candles: OHLCV[]): FullAnalysis | null {
     if (ind.result.signal === 'BULLISH') bullishScore += ind.weight * 100;
     else if (ind.result.signal === 'BEARISH') bearishScore += ind.weight * 100;
   }
-  bullishScore *= adxMultiplier;
-  bearishScore *= adxMultiplier;
+
 
   let direction: 'BULLISH'|'BEARISH'|'NEUTRAL';
   let confluenceScore: number;
