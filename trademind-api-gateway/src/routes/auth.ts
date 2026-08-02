@@ -53,11 +53,51 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, name: true, email: true, riskProfile: true, capitalPerTrade: true, riskPercent: true, riskReward: true, marketCategory: true, tradingStyle: true } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: {
+        id: true, name: true, email: true, riskProfile: true,
+        capitalPerTrade: true, riskPercent: true, riskReward: true,
+        marketCategory: true, tradingStyle: true
+      }
+    });
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error });
+  }
+});
+
+// PATCH /api/auth/settings  — Bug Fix #1: actually persist settings
+router.patch('/settings', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, capitalPerTrade, riskPercent, riskReward, marketCategory, tradingStyle } = req.body;
+
+    const updateData: Record<string, any> = {};
+    if (name !== undefined) updateData.name = String(name).trim();
+    if (capitalPerTrade !== undefined) updateData.capitalPerTrade = Number(capitalPerTrade);
+    if (riskPercent !== undefined) updateData.riskPercent = Number(riskPercent);
+    if (riskReward !== undefined) updateData.riskReward = Number(riskReward);
+    if (marketCategory !== undefined) updateData.marketCategory = String(marketCategory);
+    if (tradingStyle !== undefined) updateData.tradingStyle = String(tradingStyle);
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: 'No valid fields to update' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: updateData,
+      select: {
+        id: true, name: true, email: true, riskProfile: true,
+        capitalPerTrade: true, riskPercent: true, riskReward: true,
+        marketCategory: true, tradingStyle: true
+      }
+    });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating settings', error });
   }
 });
 

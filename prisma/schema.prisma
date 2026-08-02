@@ -52,6 +52,7 @@ model Watchlist {
 model Signal {
   id              String   @id @default(uuid())
   stockSymbol     String
+  stockName       String?
   entryPrice      Float
   stopLoss        Float
   targetPrice     Float

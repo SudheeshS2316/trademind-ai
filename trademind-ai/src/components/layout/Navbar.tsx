@@ -7,7 +7,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useRouter } from 'next/navigation';
 import { StockSearch } from '@/components/dashboard/StockSearch';
-import { api } from '@/lib/api';
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -30,14 +29,9 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleNavbarSearch = async (symbol: string) => {
-    try {
-      // Add to watchlist, then navigate there
-      await api.post('/api/watchlist', { symbol }).catch(() => {});
-      router.push('/watchlist');
-    } catch (err) {
-      console.error('Failed to add from navbar search:', err);
-    }
+  // Bug Fix #3: navigate to stock detail page to view chart + data
+  const handleNavbarSearch = (symbol: string) => {
+    router.push(`/stock/${encodeURIComponent(symbol)}`);
   };
 
   return (

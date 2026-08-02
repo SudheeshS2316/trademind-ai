@@ -7,7 +7,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { StockSearch } from '@/components/dashboard/StockSearch';
 import { api } from '@/lib/api';
 import { cn, formatCurrency, formatPercent } from '@/lib/utils';
-import { Eye, Trash2, Bell, TrendingUp, TrendingDown } from 'lucide-react';
+import { Eye, Trash2, Bell, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface WatchlistItem { id: string; stockSymbol: string; createdAt: string; }
 
@@ -18,6 +19,7 @@ export default function WatchlistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { priceTicks, socket } = useWebSocket();
+  const router = useRouter();
 
   const fetchWatchlist = useCallback(async () => {
     try {
@@ -107,11 +109,19 @@ export default function WatchlistPage() {
                 const p = getPrice(item.stockSymbol);
                 return (
                   <tr key={item.id} className="border-b border-terminal-600/50 hover:bg-terminal-700/50">
-                    <td className="px-4 py-3"><p className="font-mono font-semibold text-text-primary">{item.stockSymbol}</p></td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => router.push(`/stock/${encodeURIComponent(item.stockSymbol)}`)} className="font-mono font-semibold text-text-primary hover:text-accent transition-colors">
+                        {item.stockSymbol}
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-right font-mono font-semibold text-text-primary">{formatCurrency(p.price)}</td>
                     <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">{p.change >= 0 ? <TrendingUp size={12} className="text-bullish" /> : <TrendingDown size={12} className="text-bearish" />}<span className={cn('font-mono text-sm', p.change >= 0 ? 'text-bullish' : 'text-bearish')}>{formatPercent(p.changePercent)}</span></div></td>
                     <td className="px-4 py-3 text-right text-sm text-text-secondary hidden sm:table-cell font-mono">{p.volume}</td>
-                    <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1"><button className="rounded-lg p-1.5 text-text-muted hover:bg-terminal-600 hover:text-accent" title="Alert"><Bell size={14} /></button><button onClick={() => handleRemove(item.id)} className="rounded-lg p-1.5 text-text-muted hover:bg-bearish-dim hover:text-bearish" title="Remove"><Trash2 size={14} /></button></div></td>
+                    <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
+                      <button onClick={() => router.push(`/stock/${encodeURIComponent(item.stockSymbol)}`)} className="rounded-lg p-1.5 text-text-muted hover:bg-terminal-600 hover:text-accent" title="View Chart"><BarChart2 size={14} /></button>
+                      <button className="rounded-lg p-1.5 text-text-muted hover:bg-terminal-600 hover:text-accent" title="Alert"><Bell size={14} /></button>
+                      <button onClick={() => handleRemove(item.id)} className="rounded-lg p-1.5 text-text-muted hover:bg-bearish-dim hover:text-bearish" title="Remove"><Trash2 size={14} /></button>
+                    </div></td>
                   </tr>
                 );
               })}
