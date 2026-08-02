@@ -244,17 +244,16 @@ export function analyzeStock(candles: OHLCV[]): FullAnalysis | null {
   const ema50 = ema50Arr[ema50Arr.length-1] || cur;
 
   // Weighted scoring — swing trader strategy
-  // ADX acts as a trend strength multiplier
-  const adxMultiplier = adx.value >= 25 ? 1.0 : adx.value >= 20 ? 0.85 : 0.65;
-
+  // ADX informs scoring via its own indicator weight, NOT as a global multiplier
+  // (Global multiplier was too aggressive — caused real signals to fail threshold)
   const weights = { rsi: 0.15, macd: 0.20, ema: 0.20, ema50_200: 0.10, stoch: 0.15, volume: 0.10, bb: 0.10 };
   const indicators = [
-    { result: rsi,        weight: weights.rsi },
-    { result: macd,       weight: weights.macd },
+    { result: rsi,          weight: weights.rsi },
+    { result: macd,         weight: weights.macd },
     { result: emaCrossover, weight: weights.ema },
-    { result: ema50_200,  weight: weights.ema50_200 },
-    { result: stochastic, weight: weights.stoch },
-    { result: volume,     weight: weights.volume },
+    { result: ema50_200,    weight: weights.ema50_200 },
+    { result: stochastic,   weight: weights.stoch },
+    { result: volume,       weight: weights.volume },
     { result: bollingerBands, weight: weights.bb },
   ];
 
